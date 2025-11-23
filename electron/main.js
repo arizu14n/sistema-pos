@@ -1,6 +1,11 @@
 /* eslint-env node */
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const {
+  getProducts,
+  updateProduct,
+  createSale,
+} = require('./db');
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -25,6 +30,12 @@ function createWindow() {
 
 app.whenReady().then(() => {
   createWindow();
+
+  // --- IPC Handlers ---
+  ipcMain.handle('get-products', getProducts);
+  ipcMain.handle('update-product', (event, product) => updateProduct(product));
+  ipcMain.handle('create-sale', (event, saleData) => createSale(saleData.items, saleData.total));
+  // --------------------
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
