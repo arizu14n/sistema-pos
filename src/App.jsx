@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import PosView from './components/PosView';
 import BackOfficeView from './components/BackOfficeView';
-
-// Importamos ipcRenderer de forma segura para comunicarnos con Electron
-const { ipcRenderer } = window.require('electron');
+import PinModal from './components/PinModal';
 
 const App = () => {
   const [view, setView] = useState('pos'); // 'pos' | 'backoffice'
   const [db, setDb] = useState([]); // Ahora empieza vacío y se llena desde SQLite
+  const [sales, setSales] = useState([]); // Estado para el historial de ventas
+  const [showPinModal, setShowPinModal] = useState(false);
 
   // --- CARGA INICIAL DE DATOS ---
   useEffect(() => {
@@ -16,7 +16,7 @@ const App = () => {
 
   const cargarProductos = async () => {
     // Pedimos los datos al Backend (main.js -> db.js)
-    const productosReales = await ipcRenderer.invoke('get-products');
+    const productosReales = await window.electronAPI.getProducts();
     setDb(productosReales);
   };
 
@@ -25,37 +25,90 @@ const App = () => {
   // Vender (Guardar en DB y recargar)
   const handleProcessSale = async (carrito, total) => {
     try {
-      await ipcRenderer.invoke('create-sale', { items: carrito, total });
-      alert(`Venta registrada por $${total}.`);
+      await window.electronAPI.createSale({ items: carrito, total });
+      window.electronAPI.alert(`Venta registrada por $${total}.`);
       cargarProductos(); // Recargamos para ver el stock actualizado
     } catch (error) {
-      alert("Error al procesar venta: " + error);
+      window.electronAPI.alert("Error al procesar venta: " + error);
     }
   };
 
   // Actualizar Producto (Guardar en DB y recargar)
   const handleUpdateProduct = async (productoEditado) => {
     try {
-      await ipcRenderer.invoke('update-product', productoEditado);
+      await window.electronAPI.updateProduct(productoEditado);
       cargarProductos(); // Recargamos
     } catch (error) {
-      alert("Error al actualizar: " + error);
+      window.electronAPI.alert("Error al actualizar: " + error);
     }
+  };
+
+  // Crear Producto (Guardar en DB y recargar)
+  const handleCreateProduct = async (nuevoProducto) => {
+    try {
+      await window.electronAPI.createProduct(nuevoProducto);
+      cargarProductos(); // Recargamos para ver el nuevo producto en la lista
+    } catch (error) {
+      window.electronAPI.alert("Error al crear producto: " + error);
+    }
+  };
+
+  // Borrar Producto (lógico)
+  const handleDeleteProduct = async (id) => {
+    try {
+      await window.electronAPI.deleteProduct(id);
+      cargarProductos(); // Recargamos para que desaparezca de la lista
+    } catch (error) {
+      window.electronAPI.alert("Error al borrar producto: " + error);
+    }
+  };
+
+  // Obtener historial de ventas
+  const handleGetSales = async (filter) => {
+    try {
+      const salesData = await window.electronAPI.getSales(filter);
+      setSales(salesData);
+    } catch (error) {
+      alert("Error al obtener ventas: " + error);
+    }
+  };
+
+  const handleOpenAdmin = () => {
+    setShowPinModal(true);
+  };
+
+  const handlePinSubmit = (pin) => {
+    const ADMIN_PIN = '1234'; // PIN de administrador (hardcodeado por ahora)
+    if (pin === ADMIN_PIN) {
+      setView('backoffice');
+      setShowPinModal(false);
+    } else {
+      window.electronAPI.alert('PIN incorrecto.');
+    }
+  };
+
+  const handleClosePinModal = () => {
+    setShowPinModal(false);
   };
 
   return (
     <>
+      {showPinModal && <PinModal onPinSubmit={handlePinSubmit} onCancel={handleClosePinModal} />}
       {view === 'pos' ? (
         <PosView 
           db={db} 
           onProcessSale={handleProcessSale} 
-          onOpenAdmin={() => setView('backoffice')} 
+          onOpenAdmin={handleOpenAdmin} 
         />
       ) : (
         <BackOfficeView 
           db={db} 
+          sales={sales}
           onUpdateProduct={handleUpdateProduct}
-          onBack={() => setView('pos')} 
+          onCreateProduct={handleCreateProduct}
+          onDeleteProduct={handleDeleteProduct}
+          onGetSales={handleGetSales}
+          onBack={() => setView('pos')}
         />
       )}
     </>

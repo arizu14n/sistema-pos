@@ -23,6 +23,18 @@ const initDB = () => {
     )
   `);
 
+  // --- Simple Migration ---
+  // Intentamos agregar la columna 'activo'. Si ya existe, SQLite dará un error que podemos ignorar.
+  try {
+    db.exec('ALTER TABLE products ADD COLUMN activo INTEGER DEFAULT 1');
+    console.log('✅ Migración: Columna "activo" agregada a la tabla de productos.');
+  } catch (err) {
+    if (!err.message.includes('duplicate column name')) {
+      console.error('Error al migrar la tabla de productos:', err);
+    }
+  }
+  // --------------------
+
   // Tabla Ventas
   db.exec(`
     CREATE TABLE IF NOT EXISTS sales (
@@ -53,7 +65,7 @@ const initDB = () => {
 };
 
 // Funciones exportadas
-const getProducts = () => db.prepare('SELECT * FROM products').all();
+const getProducts = () => db.prepare('SELECT * FROM products WHERE activo = 1 ORDER BY nombre ASC').all();
 const updateProduct = (p) => db.prepare('UPDATE products SET nombre = @nombre, precio = @precio, stock = @stock WHERE id = @id').run(p);
 const createSale = (items, total) => {
   const transaction = db.transaction(() => {
@@ -65,10 +77,32 @@ const createSale = (items, total) => {
   return true;
 };
 
+// Nueva función para crear un producto
+const createProduct = (product) => {
+  const stmt = db.prepare('INSERT INTO products (codigo, nombre, precio, stock, categoria) VALUES (@codigo, @nombre, @precio, @stock, @categoria)');
+  const info = stmt.run(product);
+  return info.lastInsertRowid;
+};
+
+// Nueva función para borrado lógico de un producto
+const deleteProduct = (id) => {
+  const stmt = db.prepare('UPDATE products SET activo = 0 WHERE id = ?');
+  stmt.run(id);
+};
 
 // Nueva función: Obtener historial de ventas (últimas 50)
-const getSales = () => {
-  return db.prepare('SELECT * FROM sales ORDER BY id DESC LIMIT 50').all();
+const getSales = (filter = {}) => {
+  let query = 'SELECT * FROM sales';
+  const params = {};
+
+  if (filter.startDate && filter.endDate) {
+    query += ' WHERE fecha BETWEEN @startDate AND @endDate';
+    params.startDate = filter.startDate;
+    params.endDate = filter.endDate;
+  }
+
+  query += ' ORDER BY fecha DESC';
+  return db.prepare(query).all(params);
 };
 
 initDB();
@@ -78,4 +112,7 @@ module.exports = {
   getProducts,
   updateProduct,
   createSale,
-  getSales };
+  getSales,
+  createProduct,
+  deleteProduct,
+};

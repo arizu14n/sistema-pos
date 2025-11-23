@@ -12,8 +12,10 @@ const PosView = ({ db, onProcessSale, onOpenAdmin }) => {
   }, [carrito]);
 
   useEffect(() => {
-    if(searchInputRef.current) searchInputRef.current.focus();
-  }, [carrito, query]); 
+    // Este efecto se ejecutará cada vez que la vista de POS se monte
+    // o cuando el carrito se vacíe (después de una venta).
+    searchInputRef.current?.focus();
+  }, [carrito.length === 0]); // Dependencia clave: se re-enfoca cuando el carrito está vacío.
 
   const agregarProducto = (producto) => {
     if (producto.stock <= 0) return alert("¡Sin Stock!");
@@ -73,7 +75,6 @@ const PosView = ({ db, onProcessSale, onOpenAdmin }) => {
               onChange={manejarBusqueda}
               placeholder="Escanear código o escribir nombre..."
               className="w-full pl-12 pr-4 py-3 text-xl font-medium text-gray-800 bg-gray-50 border-2 border-transparent rounded-lg focus:bg-white focus:border-blue-500 focus:ring-0 transition-all outline-none placeholder-gray-400"
-              autoFocus
             />
           </div>
         </div>
