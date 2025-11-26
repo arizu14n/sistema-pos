@@ -23,5 +23,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // In the next step, we will build a custom modal.
     return window.prompt(message);
   },
-  alert: (message) => window.alert(message),
+  alert: (message) => ipcRenderer.invoke('show-alert', message),
 });

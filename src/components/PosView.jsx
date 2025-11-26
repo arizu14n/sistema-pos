@@ -35,8 +35,8 @@ const PosView = ({ db, onProcessSale, onOpenAdmin }) => {
     }).filter(item => item.cantidad > 0));
   };
 
-  const manejarCobro = () => {
-    onProcessSale(carrito, total);
+  const manejarCobro = async () => {
+    await onProcessSale(carrito, total);
     setCarrito([]);
   };
 

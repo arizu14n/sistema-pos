@@ -1,5 +1,5 @@
 /* eslint-env node */
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const {
   getProducts,
@@ -42,6 +42,15 @@ app.whenReady().then(() => {
   ipcMain.handle('create-product', (event, product) => createProduct(product));
   ipcMain.handle('delete-product', (event, id) => deleteProduct(id));
   ipcMain.handle('get-sales', (event, filter) => getSales(filter));
+
+  ipcMain.handle('show-alert', (event, message) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    return dialog.showMessageBox(win, {
+      type: 'info',
+      message: message,
+      title: 'Información',
+    });
+  });
   // --------------------
 
   app.on('activate', () => {

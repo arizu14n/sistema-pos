@@ -26,10 +26,10 @@ const App = () => {
   const handleProcessSale = async (carrito, total) => {
     try {
       await window.electronAPI.createSale({ items: carrito, total });
-      window.electronAPI.alert(`Venta registrada por $${total}.`);
-      cargarProductos(); // Recargamos para ver el stock actualizado
+      await window.electronAPI.alert(`Venta registrada por $${total}.`);
+      await cargarProductos(); // Recargamos para ver el stock actualizado
     } catch (error) {
-      window.electronAPI.alert("Error al procesar venta: " + error);
+      await window.electronAPI.alert("Error al procesar venta: " + error);
     }
   };
 
@@ -37,9 +37,9 @@ const App = () => {
   const handleUpdateProduct = async (productoEditado) => {
     try {
       await window.electronAPI.updateProduct(productoEditado);
-      cargarProductos(); // Recargamos
+      await cargarProductos(); // Recargamos
     } catch (error) {
-      window.electronAPI.alert("Error al actualizar: " + error);
+      await window.electronAPI.alert("Error al actualizar: " + error);
     }
   };
 
@@ -47,9 +47,9 @@ const App = () => {
   const handleCreateProduct = async (nuevoProducto) => {
     try {
       await window.electronAPI.createProduct(nuevoProducto);
-      cargarProductos(); // Recargamos para ver el nuevo producto en la lista
+      await cargarProductos(); // Recargamos para ver el nuevo producto en la lista
     } catch (error) {
-      window.electronAPI.alert("Error al crear producto: " + error);
+      await window.electronAPI.alert("Error al crear producto: " + error);
     }
   };
 
@@ -57,9 +57,9 @@ const App = () => {
   const handleDeleteProduct = async (id) => {
     try {
       await window.electronAPI.deleteProduct(id);
-      cargarProductos(); // Recargamos para que desaparezca de la lista
+      await cargarProductos(); // Recargamos para que desaparezca de la lista
     } catch (error) {
-      window.electronAPI.alert("Error al borrar producto: " + error);
+      await window.electronAPI.alert("Error al borrar producto: " + error);
     }
   };
 
@@ -77,13 +77,13 @@ const App = () => {
     setShowPinModal(true);
   };
 
-  const handlePinSubmit = (pin) => {
+  const handlePinSubmit = async (pin) => {
     const ADMIN_PIN = '1234'; // PIN de administrador (hardcodeado por ahora)
     if (pin === ADMIN_PIN) {
       setView('backoffice');
       setShowPinModal(false);
     } else {
-      window.electronAPI.alert('PIN incorrecto.');
+      await window.electronAPI.alert('PIN incorrecto.');
     }
   };
 
